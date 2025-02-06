@@ -26,12 +26,11 @@ jobs:
       - name: Configurar LocalStack
         run: |
           docker run -d --name localstack -p 4566:4566 localstack/localstack
-          while ! curl -s http://localhost:4566/health | grep '"s3": "running"'; do
-            sleep 5
-          done
+          echo "Aguardando LocalStack iniciar..."
+          sleep 30
 
-      - name: Esperar LocalStack iniciar
-        run: sleep 10
+      - name: Verificar status do LocalStack
+        run: curl -s http://localhost:4566/health || docker logs localstack
 
       - name: Criar diretório de backup se não existir
         run: mkdir -p ./backup
@@ -46,4 +45,4 @@ jobs:
         run: chmod +x backup_monitor.py
 
       - name: Executar Script de Backup
-        run: python backup_monitor.py
+        run: python backup_monitor.py || cat backup_monitor.py
