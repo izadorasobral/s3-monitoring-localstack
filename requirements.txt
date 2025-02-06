@@ -1,0 +1,3 @@
+git add .github/workflows/backup.yml requirements.txt
+git commit -m "Aprimora workflow de backup com verificações e dependências"
+git push origin main
