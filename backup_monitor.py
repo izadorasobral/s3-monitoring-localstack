@@ -26,6 +26,11 @@ except:
     s3.create_bucket(Bucket=BUCKET_NAME)
     logging.info(f"Bucket '{BUCKET_NAME}' criado.")
 
+# Criar o diretório de backup se não existir
+if not os.path.exists(DIRECTORY_TO_WATCH):
+    os.makedirs(DIRECTORY_TO_WATCH)
+    logging.info(f"Diretório '{DIRECTORY_TO_WATCH}' criado.")
+
 # Função para fazer upload de arquivos
 def upload_file(file_path):
     file_name = os.path.basename(file_path)

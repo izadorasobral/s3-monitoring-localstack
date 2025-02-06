@@ -9,26 +9,28 @@ jobs:
   backup:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
-
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
 
       - name: Instalar dependências
         run: |
-          pip install boto3 awscli-local
+          pip install boto3
+          pip install awscli-local
 
       - name: Configurar LocalStack
         run: |
           docker run -d --name localstack -p 4566:4566 localstack/localstack
           sleep 10  # Aguarda o container iniciar
 
-      - name: Verificar instalação do AWS CLI
-        run: aws --version
+      - name: Criar diretório de backup se não existir
+        run: mkdir -p ./backup
+
+      - name: Configurar credenciais AWS falsas
+        run: |
+          export AWS_ACCESS_KEY_ID=test
+          export AWS_SECRET_ACCESS_KEY=test
+          export AWS_DEFAULT_REGION=us-east-1
 
       - name: Criar bucket S3 no LocalStack
         run: aws --endpoint-url=http://localhost:4566 s3 mb s3://meu-bucket
