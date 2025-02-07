@@ -32,8 +32,16 @@ jobs:
       - name: Verificar LocalStack
         run: |
           for i in {1..6}; do
-            STATUS=$(curl -s http://localhost:4566/health | jq -r '.services.s3')
-            if [ "$STATUS" == "running" ]; then
+            RESPONSE=$(curl -s http://localhost:4566/health || echo "error")
+            if [[ "$RESPONSE" == "error" ]]; then
+              echo "Erro ao conectar ao LocalStack, tentando novamente..."
+              sleep 10
+              continue
+            fi
+            
+            STATUS=$(echo "$RESPONSE" | jq -r '.services.s3 // empty')
+
+            if [[ "$STATUS" == "running" ]]; then
               echo "LocalStack está pronto!"
               exit 0
             fi
