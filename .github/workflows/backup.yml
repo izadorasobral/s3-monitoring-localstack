@@ -30,8 +30,8 @@ jobs:
 
       - name: Verificar LocalStack
         run: |
-          STATUS=$(curl -s http://localhost:4566/health | jq -r '.services.s3')
-          if [[ "$STATUS" != "running" ]]; then
+          STATUS=$(curl -s http://localhost:4566/health | grep -o '"s3": "running"')
+          if [ -z "$STATUS" ]; then
             echo "Erro: LocalStack não iniciou corretamente"
             exit 1
           fi
