@@ -29,19 +29,16 @@ jobs:
           echo "Aguardando LocalStack iniciar..."
           sleep 10
 
-      - name: Verificar LocalStack
+      - name: Verificar resposta do LocalStack
+        run: curl -s http://localhost:4566/health
+
+      - name: Verificar LocalStack com retries
         run: |
           for i in {1..6}; do
-            RESPONSE=$(curl -s http://localhost:4566/health || echo "error")
-            if [[ "$RESPONSE" == "error" ]]; then
-              echo "Erro ao conectar ao LocalStack, tentando novamente..."
-              sleep 10
-              continue
-            fi
-            
+            RESPONSE=$(curl -s http://localhost:4566/health)
+            echo "Resposta do LocalStack: $RESPONSE"
             STATUS=$(echo "$RESPONSE" | jq -r '.services.s3 // empty')
-
-            if [[ "$STATUS" == "running" ]]; then
+            if [ "$STATUS" = "running" ]; then
               echo "LocalStack está pronto!"
               exit 0
             fi
