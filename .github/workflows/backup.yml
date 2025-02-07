@@ -26,27 +26,25 @@ jobs:
       - name: Configurar LocalStack
         run: |
           docker run -d --name localstack -p 4566:4566 localstack/localstack
-          sleep 20  # Espera 20 segundos para garantir que subiu
+          echo "Aguardando LocalStack iniciar..."
+          sleep 10
 
       - name: Verificar LocalStack
         run: |
-          STATUS=$(curl -s http://localhost:4566/health | grep -o '"s3": "running"')
-          if [ -z "$STATUS" ]; then
-            echo "Erro: LocalStack não iniciou corretamente"
-            exit 1
-          fi
+          for i in {1..6}; do
+            STATUS=$(curl -s http://localhost:4566/health | jq -r '.services.s3')
+            if [ "$STATUS" == "running" ]; then
+              echo "LocalStack está pronto!"
+              exit 0
+            fi
+            echo "Tentativa $i: LocalStack ainda não está pronto. Aguardando..."
+            sleep 10
+          done
+          echo "Erro: LocalStack não iniciou corretamente"
+          exit 1
 
       - name: Criar diretório de backup se não existir
         run: mkdir -p ./backup
 
       - name: Criar bucket S3 no LocalStack
-        run: aws --endpoint-url=http://localhost:4566 s3 mb s3://meu-bucket
-
-      - name: Verificar buckets existentes
-        run: aws --endpoint-url=http://localhost:4566 s3 ls
-
-      - name: Garantir permissão do script
-        run: chmod +x backup_monitor.py
-
-      - name: Executar Script de Backup
-        run: python backup_monitor.py
+        run:
