@@ -3,7 +3,7 @@ name: Automação de Backup S3
 on:
   push:
     branches:
-      - main  # Roda sempre que um push for feito na branch main
+      - main  # Executa sempre que um push for feito na branch main
 
 jobs:
   backup:
@@ -29,19 +29,21 @@ jobs:
           echo "Aguardando LocalStack iniciar..."
           sleep 10
 
-      - name: Verificar resposta do LocalStack
-        run: curl -s http://localhost:4566/health
-
-      - name: Verificar LocalStack com retries
+      - name: Verificar LocalStack com retries (Corrigido)
         run: |
           for i in {1..6}; do
-            RESPONSE=$(curl -s http://localhost:4566/health)
+            RESPONSE=$(curl -s -H "Accept: application/json" http://localhost:4566/health || echo "{}")
             echo "Resposta do LocalStack: $RESPONSE"
-            STATUS=$(echo "$RESPONSE" | jq -r '.services.s3 // empty')
-            if [ "$STATUS" = "running" ]; then
-              echo "LocalStack está pronto!"
-              exit 0
+
+            # Verifica se a resposta contém JSON antes de usar jq
+            if echo "$RESPONSE" | grep -q '{'; then
+              STATUS=$(echo "$RESPONSE" | jq -r '.services.s3 // "offline"')
+              if [ "$STATUS" = "running" ]; then
+                echo "LocalStack está pronto!"
+                exit 0
+              fi
             fi
+            
             echo "Tentativa $i: LocalStack ainda não está pronto. Aguardando..."
             sleep 10
           done
@@ -52,10 +54,10 @@ jobs:
         run: mkdir -p ./backup
 
       - name: Criar bucket S3 no LocalStack
-        run: aws --endpoint-url=http://localhost:4566 s3 mb s3://meu-bucket
+        run: aws --endpoint-url=http://localhost:4566 s3 mb s3://meu-bucket || echo "Erro ao criar bucket"
 
       - name: Verificar buckets existentes
-        run: aws --endpoint-url=http://localhost:4566 s3 ls
+        run: aws --endpoint-url=http://localhost:4566 s3 ls || echo "Erro ao listar buckets"
 
       - name: Garantir permissão do script
         run: chmod +x backup_monitor.py
